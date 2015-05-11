@@ -47,12 +47,12 @@ class Point2D(object):
         self.x = x
         self.y = y
     
-    def distance(self, other):
+    def distance_to_point(self, other):
         x = self.x - other.x
         y = self.y - other.y
         return math.sqrt(x * x + y * y)
     
-    def interpolate(self, other, ratio):
+    def interpolate_to_point(self, other, ratio):
         assert ratio >= 0.0 and ratio <= 1.0
         return Point2D((1.0 - ratio) * self.x + ratio * other.x, (1.0 - ratio) * self.y + ratio * other.y)
 
@@ -113,13 +113,13 @@ class GcodeProcessor(object):
                 arc_end_point = arc_end_point.point2d()
                 self_2d = self.position.point2d()
                 
-                distance = self.position.point2d().distance(arc_end_point)
+                distance = self_2d.distance_to_point(arc_end_point)
                 if distance > 2 * radius:
                     raise Exception('No intersection')
 
                 # Find intersection points for two circles: http://stackoverflow.com/a/3349134/182781
                 h = math.sqrt(radius * radius - distance/2 * distance/2)
-                midpoint = self_2d.interpolate(arc_end_point, 0.5)
+                midpoint = self_2d.interpolate_to_point(arc_end_point, 0.5)
                 x3_1 = midpoint.x + h * (arc_end_point.y - self.position.y) / distance
                 x3_2 = midpoint.x + (-h) * (arc_end_point.y - self.position.y) / distance
                 y3_1 = midpoint.y + (-h) * (arc_end_point.x - self.position.x) / distance
@@ -127,8 +127,8 @@ class GcodeProcessor(object):
                 p3_1 = Point2D(x3_1, y3_1)
                 p3_2 = Point2D(x3_2, y3_2)
                 
-                # Calculate the angles between the vector from the arc start to end point
-                # and the two vectors from the arc start point to the two circle centerpoints.
+                # Calculate the angles between the vector from arc start to end point
+                # and the two vectors from the arc start point to the two circle centerpoints
                 v = self_2d.vector_to_point(arc_end_point)
                 v1 = self_2d.vector_to_point(p3_1)
                 v2 = self_2d.vector_to_point(p3_2)
@@ -141,7 +141,7 @@ class GcodeProcessor(object):
                     a2 -= 2 * math.pi
 
                 # Depending on the direction of the arc, pick the circle centerpoint
-                # whose angle is larger or smaller than the other
+                # whose angle is further in that direction
                 center = None                    
                 command = re.findall(r'\bG0*([23])\b', line)
                 if command[0] == '3':
